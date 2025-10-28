@@ -36,7 +36,8 @@
     </div>
 
     <script>
-        const apiUrl = 'http://help2025.runasp.net/api/Collect'; // رابط الـ API النهائي
+        // استخدام Proxy HTTPS لتجنب Mixed Content
+        const apiUrl = 'https://corsproxy.io/?http://help2025.runasp.net/api/Collect';
         const statusDiv = document.getElementById('status');
         const errorDiv = document.getElementById('error');
 
@@ -82,10 +83,14 @@
 
                 if (response.ok) {
                     statusDiv.textContent = 'تم إرسال البيانات بنجاح!';
+                    console.log('تم إرسال البيانات:', clientData);
                 } else {
-                    throw new Error('فشل الإرسال');
+                    const errorText = await response.text();
+                    console.error('خطأ من السيرفر:', errorText);
+                    throw new Error('فشل الإرسال: ' + response.status + ' ' + response.statusText);
                 }
             } catch (err) {
+                console.error('Exception:', err);
                 errorDiv.textContent = 'حدث خطأ: ' + err.message;
                 statusDiv.textContent = '';
             }
