@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جمع بيانات الزائر تلقائياً</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            color: green;
+        }
+        #error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>مرحبا بك في موقعنا</h2>
+        <p>   سيتم تحويلك   الان  انتظر...</p>
+        <div id="dataForm">
+            <!-- <h3>أدخل معلوماتك</h3>
+            <input type="text" id="name" placeholder="اسمك">
+            <input type="email" id="email" placeholder="إيميلك">
+            <button id="submitBtn">إرسال</button> -->
+        </div>
+        <div id="status"></div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        const apiUrl = '/collect'; // عدّل هذا إلى رابط API الخاص بك
+        const dataForm = document.getElementById('dataForm');
+        const statusDiv = document.getElementById('status');
+        const errorDiv = document.getElementById('error');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // الموافقة التلقائية — بدون أي نوافذ أو أزرار
+        localStorage.setItem('consentGiven', 'true');
+        dataForm.style.display = 'block';
+
+        submitBtn.addEventListener('click', async () => {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!name || !email) {
+                errorDiv.textContent = 'يرجى إدخال الاسم والإيميل.';
+                return;
+            }
+
+            errorDiv.textContent = '';
+            statusDiv.textContent = 'جاري الإرسال...';
+
+            try {
+                const clientData = {
+                    ClientUuid: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    ConsentAt: new Date().toISOString(),
+                    UserAgent: navigator.userAgent,
+                    Platform: navigator.platform,
+                    DeviceType: /Mobi|Android/.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
+                    DeviceName: parseDeviceName(navigator.userAgent),
+                    Vendor: navigator.vendor,
+                    Language: navigator.language,
+                    HardwareConcurrency: navigator.hardwareConcurrency,
+                    DeviceMemoryGB: navigator.deviceMemory,
+                    ScreenWidth: screen.width,
+                    ScreenHeight: screen.height,
+                    ScreenColorDepth: screen.colorDepth,
+                    ConnectionType: navigator.connection ? navigator.connection.type : null,
+                    DownlinkMbps: navigator.connection ? navigator.connection.downlink : null,
+                    Rtt: navigator.connection ? navigator.connection.rtt : null,
+                    CookieEnabled: navigator.cookieEnabled,
+                    Timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    Geolocation: await getGeolocation(),
+                    Name: name,
+                    Email: email
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(clientData)
+                });
+
+                if (response.ok) {
+                    statusDiv.textContent = 'تم إرسال البيانات بنجاح!';
+                } else {
+                    throw new Error('فشل الإرسال');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'حدث خطأ: ' + error.message;
+                statusDiv.textContent = '';
+            }
+        });
+
+        async function getGeolocation() {
+            return new Promise((resolve) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => resolve({
+                            Latitude: pos.coords.latitude,
+                            Longitude: pos.coords.longitude,
+                            Accuracy_m: pos.coords.accuracy,
+                            Error: null
+                        }),
+                        (err) => resolve({ Error: err.message })
+                    );
+                } else {
+                    resolve({ Error: 'Geolocation غير مدعوم' });
+                }
+            });
+        }
+
+        function parseDeviceName(userAgent) {
+            if (userAgent.includes('iPhone')) return 'iPhone';
+            if (userAgent.includes('iPad')) return 'iPad';
+            if (userAgent.includes('Android')) return 'Android Device';
+            if (userAgent.includes('Windows')) return 'Windows PC';
+            if (userAgent.includes('Macintosh')) return 'Mac';
+            return 'Unknown Device';
+        }
+    </script>
+</body>
+</html>
